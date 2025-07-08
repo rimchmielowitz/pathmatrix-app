@@ -1,0 +1,10 @@
+streamlit
+folium
+geopy
+matplotlib
+ortools
+streamlit-folium
+xlsxwriter
+geopy
+requests
+typing_extensions
