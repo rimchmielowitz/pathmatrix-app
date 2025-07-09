@@ -11,6 +11,7 @@ Refactored with TypedDict for clean, type-safe configuration.
 from typing import Dict, List, Any, Tuple, Optional
 from typing_extensions import TypedDict
 from io import BytesIO
+import requests
 
 # Third-party imports
 import streamlit as st
@@ -19,12 +20,15 @@ import folium
 from streamlit_folium import st_folium
 from geopy.distance import geodesic
 
+
 def call_solver_api(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """Send optimization input to external FastAPI solver and return result."""
     try:
-        url = "https://pathmatrix-solver-api.onrender.com/solve"  # deine Render-URL
+        url = "https://pathmatrix-solver-api.onrender.com/solve"
         response = requests.post(url, json=input_data, timeout=60)
-        return response.json()
+        st.write("Status:", response.status_code)
+        st.write("Raw Response Text:", response.text)
+        return response.json()  # hier knallt es aktuell
     except Exception as e:
         return {"solver_status": f"FAILED: {e}"}
 
@@ -344,7 +348,6 @@ def create_demand_map(packages_per_destination: PackageDistribution) -> folium.M
     Returns:
         Folium map object with demand visualization
     """
-    # Clean access without cast()!
     city_coords: Dict[str, Tuple[float, float]] = CONFIG["CITY_COORDINATES"]
     map_center_lat: float = CONFIG["MAP_CENTER_LAT"]
     map_center_lon: float = CONFIG["MAP_CENTER_LON"]
@@ -411,7 +414,6 @@ def create_demand_map(packages_per_destination: PackageDistribution) -> folium.M
 
 def render_technical_specs() -> None:
     """Render the technical specifications section."""
-    # Clean access without cast()!
     vehicle_capacity: int = CONFIG["VEHICLE_CAPACITY"]
     max_vehicles_per_route: int = CONFIG["MAX_VEHICLES_PER_ROUTE"]
     cost_per_km: float = CONFIG["COST_PER_KM"]
