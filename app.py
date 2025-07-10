@@ -22,15 +22,60 @@ from geopy.distance import geodesic
 
 
 def call_solver_api(input_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Send optimization input to external FastAPI solver and return result."""
+    """
+    Call the solver API with improved error handling and debugging.
+    
+    Args:
+        input_data: Dictionary containing config and demand data
+        
+    Returns:
+        Dictionary with solver results or error information
+    """
+    url = "https://pathmatrix-solver-api.onrender.com/solve"
+    
     try:
-        url = "https://pathmatrix-solver-api.onrender.com/solve"
-        response = requests.post(url, json=input_data, timeout=60)
-        st.write("Status:", response.status_code)
-        st.write("Raw Response Text:", response.text)
-        return response.json()  # hier knallt es aktuell
+        # Log request details for debugging
+        st.write("🔄 Sending request to solver...")
+        st.write(f"📡 URL: {url}")
+        
+        # Make the request
+        response = requests.post(
+            url, 
+            json=input_data,
+            timeout=120,  # 2 minute timeout
+            headers={'Content-Type': 'application/json'}
+        )
+        
+        # Log response details
+        st.write(f"📊 Status Code: {response.status_code}")
+        
+        if response.status_code == 200:
+            try:
+                result = response.json()
+                st.write("✅ Successfully received response from solver")
+                st.write(f"🎯 Solver Status: {result.get('solver_status', 'UNKNOWN')}")
+                return result
+            except ValueError as e:
+                st.error(f"❌ Failed to parse JSON response: {e}")
+                st.write("Raw response:", response.text[:1000])
+                return {"solver_status": f"FAILED: Invalid JSON response"}
+        else:
+            st.error(f"❌ HTTP Error: {response.status_code}")
+            st.write("Response:", response.text[:1000])
+            return {"solver_status": f"FAILED: HTTP {response.status_code}"}
+            
+    except requests.exceptions.Timeout:
+        st.error("❌ Request timeout - solver took too long")
+        return {"solver_status": "FAILED: Timeout"}
+        
+    except requests.exceptions.ConnectionError:
+        st.error("❌ Connection error - could not reach solver API")
+        return {"solver_status": "FAILED: Connection error"}
+        
     except Exception as e:
-        return {"solver_status": f"FAILED: {e}"}
+        st.error(f"❌ Unexpected error: {str(e)}")
+        return {"solver_status": f"FAILED: {str(e)}"}
+
 
 
 # ========================================
@@ -461,7 +506,28 @@ def render_results_section(
     else:
         render_unknown_status(status)
 
-
+def show_simple_schedule_table(active_routes: List[Dict[str, Any]]) -> None:
+    """Show simple schedule table as Gantt fallback"""
+    schedule_data = []
+    vehicle_counter = 0
+    
+    for route in active_routes:
+        for v in range(route["vehicles"]):
+            vehicle_counter += 1
+            travel_time = route["km"] / CONFIG.get("AVERAGE_SPEED_KMH", 80)
+            schedule_data.append({
+                "Vehicle": f"Vehicle-{vehicle_counter}",
+                "Route": f"{route['from']} → {route['to']}",
+                "Packages": route["packages"],
+                "Distance": f"{route['km']:.0f} km",
+                "Drive Time": f"{travel_time:.1f} hours",
+                "Unload Time": "0.5 hours"
+            })
+    
+    if schedule_data:
+        df_schedule = pd.DataFrame(schedule_data)
+        st.dataframe(df_schedule, use_container_width=True)
+        
 def render_successful_results(
     results: Dict[str, Any], 
     final_total_packages: int
@@ -525,15 +591,29 @@ def render_successful_results(
     # Gantt Chart
     st.subheader("⏱️ Vehicle Schedule")
     gantt_buffer: Optional[BytesIO] = None
-    if results.get("active_routes"):
-        # Convert ConfigDict to Dict[str, Any] for compatibility
-        config_dict: Dict[str, Any] = dict(CONFIG)
-        gantt_buffer = plot_gantt_diagram(results["active_routes"], config_dict)
-        st.image(gantt_buffer, caption="Vehicle Schedule Overview", use_container_width=True)
 
+    if results.get("active_routes"):
+        # Check if Backend provided Gantt chart
+        if results.get("gantt_base64"):
+            try:
+                import base64
+                gantt_data = base64.b64decode(results["gantt_base64"])
+                gantt_buffer = BytesIO(gantt_data)
+                st.image(gantt_buffer, caption="Vehicle Schedule Overview", use_container_width=True)
+                st.success("✅ Gantt chart loaded from backend")
+            except Exception as e:
+                st.warning(f"⚠️ Could not display Gantt chart: {e}")
+                st.info("📊 Showing schedule table instead")
+                show_simple_schedule_table(results["active_routes"])
+        else:
+            # ✅ KORREKT: Nur Fallback-Tabelle, kein plot_gantt_diagram Aufruf!
+            st.info("📊 Backend provided no Gantt chart - showing schedule table")
+            show_simple_schedule_table(results["active_routes"])
+    else:
+        st.info("📊 No routes to display")
+            
     # Download Options
     render_download_options(results, final_total_packages, gantt_buffer)
-
 
 def render_download_options(
     results: Dict[str, Any], 
