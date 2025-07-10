@@ -257,7 +257,7 @@ def render_introduction() -> None:
     
     with st.expander("ℹ️ Click here for introduction - Demo Version"):
         st.markdown(f"""
-        Welcome to the **PathMatrix Optimizer Demo App** (Minimum Viable Product).
+        Welcome to the **PathMatrix Optimizer Demo App** (MVP).
 
         This simplified version demonstrates the **core vehicle routing optimization** with **fixed, optimized parameters** to focus on the essential functionality.
 
