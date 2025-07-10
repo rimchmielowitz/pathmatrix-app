@@ -594,7 +594,6 @@ def render_successful_results(
                 gantt_data = base64.b64decode(results["gantt_base64"])
                 gantt_buffer = BytesIO(gantt_data)
                 st.image(gantt_buffer, caption="Vehicle Schedule Overview", use_container_width=True)
-                st.success("✅ Gantt chart loaded from backend")
             except Exception as e:
                 st.warning(f"⚠️ Could not display Gantt chart: {e}")
                 st.info("📊 Showing schedule table instead")
