@@ -1,6 +1,6 @@
-# app.py - MVP Version with TypedDict (PEP 8 + Type-Safe)
+# app.py - Demo Version with TypedDict (PEP 8 + Type-Safe)
 """
-PathMatrix Optimizer MVP - Streamlit app for vehicle routing optimization.
+PathMatrix Optimizer Demo - Streamlit app for vehicle routing optimization.
 
 This application provides a web interface for optimizing vehicle routes
 from a central hub to multiple destinations using OR-Tools.
@@ -36,8 +36,7 @@ def call_solver_api(input_data: Dict[str, Any]) -> Dict[str, Any]:
     try:
         # Log request details for debugging
         st.write("🔄 Sending request to solver...")
-        st.write(f"📡 URL: {url}")
-        
+                
         # Make the request
         response = requests.post(
             url, 
@@ -45,15 +44,11 @@ def call_solver_api(input_data: Dict[str, Any]) -> Dict[str, Any]:
             timeout=120,  # 2 minute timeout
             headers={'Content-Type': 'application/json'}
         )
-        
-        # Log response details
-        st.write(f"📊 Status Code: {response.status_code}")
-        
+                
         if response.status_code == 200:
             try:
                 result = response.json()
                 st.write("✅ Successfully received response from solver")
-                st.write(f"🎯 Solver Status: {result.get('solver_status', 'UNKNOWN')}")
                 return result
             except ValueError as e:
                 st.error(f"❌ Failed to parse JSON response: {e}")
@@ -291,7 +286,7 @@ def render_introduction() -> None:
         - **No unnecessary detours** through cities without demand
         - **Clear cost breakdown** and route visualization
 
-        ## 💡 Why MVP?
+        ## 💡 Why Demo?
         This version eliminates complexity to demonstrate the **core routing logic**. Future versions can add:
         - Multiple vehicle types
         - Complex time windows and break rules
@@ -464,9 +459,9 @@ def render_technical_specs() -> None:
     cost_per_km: float = CONFIG["COST_PER_KM"]
     min_cost_per_trip: int = CONFIG["MIN_COST_PER_TRIP"]
     
-    with st.expander("🔧 MVP Technical Specifications"):
+    with st.expander("🔧 Demo Technical Specifications"):
         st.markdown(f"""
-        ### Fixed Parameters in this MVP:
+        ### Fixed Parameters in this Demo:
         
         **🚚 Vehicle Specifications:**
         - **Type**: Standard delivery van
@@ -816,7 +811,7 @@ def main() -> None:
     max_total_packages: int = CONFIG["MAX_TOTAL_PACKAGES"]
 
     # UI Header
-    st.title("PathMatrix Optimizer 🚚 - MVP")
+    st.title("PathMatrix Optimizer 🚚 - Demo")
 
     # Introduction section
     render_introduction()
@@ -927,7 +922,7 @@ def main() -> None:
     st.markdown("---")
     st.markdown(
         "<p style='text-align: center; color: grey; font-size: 0.8em;'>"
-        "PathMatrix Optimizer MVP - Focused on core routing optimization"
+        "PathMatrix Optimizer Demo - Focused on core routing optimization"
         "</p>", 
         unsafe_allow_html=True
     )
