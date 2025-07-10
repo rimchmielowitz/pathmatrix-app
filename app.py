@@ -249,20 +249,19 @@ def on_packages_change() -> None:
 
 def render_introduction() -> None:
     """Render the introduction section with app information."""
-    # Clean access without cast() - mypy understands the types!
     inject_hub: str = CONFIG["inject_hub"]
     vehicle_capacity: int = CONFIG["VEHICLE_CAPACITY"]
     cost_per_km: float = CONFIG["COST_PER_KM"]
     min_cost_per_trip: int = CONFIG["MIN_COST_PER_TRIP"]
     solver_time_limit_ms: int = CONFIG["SOLVER_TIME_LIMIT_MS"]
     
-    with st.expander("ℹ️ Click here for introduction - MVP Version"):
+    with st.expander("ℹ️ Click here for introduction - Demo Version"):
         st.markdown(f"""
-        Welcome to the **PathMatrix Optimizer MVP** (Minimum Viable Product).
+        Welcome to the **PathMatrix Optimizer Demo App** (Minimum Viable Product).
 
         This simplified version demonstrates the **core vehicle routing optimization** with **fixed, optimized parameters** to focus on the essential functionality.
 
-        ## 🎯 What this MVP does:
+        ## 🎯 What this Demo does:
         - **Optimizes routes** from {inject_hub} (central hub) to your selected destinations
         - **Minimizes total transport costs** using mathematical optimization
         - **Prevents unnecessary detours** to cities without demand
@@ -459,7 +458,7 @@ def render_technical_specs() -> None:
     cost_per_km: float = CONFIG["COST_PER_KM"]
     min_cost_per_trip: int = CONFIG["MIN_COST_PER_TRIP"]
     
-    with st.expander("🔧 Demo Technical Specifications"):
+    with st.expander("🔧 Technical Specifications"):
         st.markdown(f"""
         ### Fixed Parameters in this Demo:
         
