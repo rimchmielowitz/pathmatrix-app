@@ -1,6 +1,5 @@
-# app.py - Demo Version with TypedDict (PEP 8 + Type-Safe)
-"""
-PathMatrix Optimizer Demo - Streamlit app for vehicle routing optimization.
+# app.py - PathMatrix Optimizer Demo
+"""PathMatrix Optimizer Demo - Streamlit app for vehicle routing optimization.
 
 This application provides a web interface for optimizing vehicle routes
 from a central hub to multiple destinations using OR-Tools.
@@ -8,77 +7,22 @@ Refactored with TypedDict for clean, type-safe configuration.
 """
 
 # Standard library imports
-from typing import Dict, List, Any, Tuple, Optional
-from typing_extensions import TypedDict
-from io import BytesIO
 import requests
+from io import BytesIO
+from typing import Any, Dict, List, Optional, Tuple
 
 # Third-party imports
-import streamlit as st
-import pandas as pd
 import folium
-from streamlit_folium import st_folium
+import pandas as pd
+import streamlit as st
 from geopy.distance import geodesic
+from streamlit_folium import st_folium
+from typing_extensions import TypedDict
 
-
-def call_solver_api(input_data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Call the solver API with improved error handling and debugging.
-    
-    Args:
-        input_data: Dictionary containing config and demand data
-        
-    Returns:
-        Dictionary with solver results or error information
-    """
-    url = "https://pathmatrix-solver-api.onrender.com/solve"
-    
-    try:
-        # Log request details for debugging
-        st.write("🔄 Sending request to solver...")
-                
-        # Make the request
-        response = requests.post(
-            url, 
-            json=input_data,
-            timeout=120,  # 2 minute timeout
-            headers={'Content-Type': 'application/json'}
-        )
-                
-        if response.status_code == 200:
-            try:
-                result = response.json()
-                st.write("✅ Successfully received response from solver")
-                return result
-            except ValueError as e:
-                st.error(f"❌ Failed to parse JSON response: {e}")
-                st.write("Raw response:", response.text[:1000])
-                return {"solver_status": f"FAILED: Invalid JSON response"}
-        else:
-            st.error(f"❌ HTTP Error: {response.status_code}")
-            st.write("Response:", response.text[:1000])
-            return {"solver_status": f"FAILED: HTTP {response.status_code}"}
-            
-    except requests.exceptions.Timeout:
-        st.error("❌ Request timeout - solver took too long")
-        return {"solver_status": "FAILED: Timeout"}
-        
-    except requests.exceptions.ConnectionError:
-        st.error("❌ Connection error - could not reach solver API")
-        return {"solver_status": "FAILED: Connection error"}
-        
-    except Exception as e:
-        st.error(f"❌ Unexpected error: {str(e)}")
-        return {"solver_status": f"FAILED: {str(e)}"}
-
-
-
-# ========================================
-# TYPE-SAFE CONFIG DEFINITIONS
-# ========================================
 
 class ConfigDict(TypedDict):
-    """Complete type-safe configuration schema."""
+    """Complete type-safe configuration schema for the optimizer."""
+    
     # Vehicle parameters
     VEHICLE_CAPACITY: int
     MAX_VEHICLES_PER_ROUTE: int
@@ -123,39 +67,35 @@ class ConfigDict(TypedDict):
     MAX_TOTAL_CAPACITY: int
     RECOMMENDED_MAX_PER_CITY: int
 
-# Type aliases for better readability
+
 PackageDistribution = Dict[str, int]
 
-# ========================================
-# TYPE-SAFE CONFIG INSTANCE
-# ========================================
-
 CONFIG: ConfigDict = {
-    # === VEHICLE PARAMETERS ===
-    "VEHICLE_CAPACITY": 200,                # packages per vehicle
-    "MAX_VEHICLES_PER_ROUTE": 10,           # solver limit
+    # Vehicle parameters
+    "VEHICLE_CAPACITY": 200,
+    "MAX_VEHICLES_PER_ROUTE": 10,
     
-    # === COST PARAMETERS ===
-    "COST_PER_KM": 1.0,                     # €/km
-    "MIN_COST_PER_TRIP": 100,               # €/trip minimum
+    # Cost parameters
+    "COST_PER_KM": 1.0,
+    "MIN_COST_PER_TRIP": 100,
     
-    # === UI PARAMETERS ===
-    "MAX_TOTAL_PACKAGES": 7500,             # max number of packages in total
-    "MAX_PACKAGES_PER_CITY": 1000,          # input limit
-    "DEFAULT_TOTAL_PACKAGES": 0,            # initial value
+    # UI parameters
+    "MAX_TOTAL_PACKAGES": 7500,
+    "MAX_PACKAGES_PER_CITY": 1000,
+    "DEFAULT_TOTAL_PACKAGES": 0,
     
-    # === SOLVER PARAMETERS ===
-    "SOLVER_TIME_LIMIT_MS": 60000,          # 60 seconds
-    "SOLVER_TYPE": "SCIP",                  # algorithm
+    # Solver parameters
+    "SOLVER_TIME_LIMIT_MS": 60000,
+    "SOLVER_TYPE": "SCIP",
     
-    # === GEOGRAPHY PARAMETERS ===
-    "MAP_CENTER_LAT": 51.1657,              # Germany center
-    "MAP_CENTER_LON": 10.4515,              # Germany center
-    "MAP_ZOOM_START": 6,                    # zoom level
+    # Geography parameters
+    "MAP_CENTER_LAT": 51.1657,
+    "MAP_CENTER_LON": 10.4515,
+    "MAP_ZOOM_START": 6,
     
-    # === CITY COORDINATES (central!) ===
+    # City coordinates
     "CITY_COORDINATES": {
-        "Berlin": (52.5200, 13.4050),       # cities (11)
+        "Berlin": (52.5200, 13.4050),
         "Hamburg": (53.5511, 9.9937),
         "Leipzig": (51.3397, 12.3731),
         "Halle (Saale)": (51.4964, 11.9684),
@@ -170,8 +110,8 @@ CONFIG: ConfigDict = {
     
     "inject_hub": "Dortmund",
     
-    # === BUSINESS LOGIC ===
-    "DEFAULT_DISTRIBUTION_PERCENT": {       # percentage distribution of total demand
+    # Business logic
+    "DEFAULT_DISTRIBUTION_PERCENT": {
         "Berlin": 28,
         "Dortmund": 11,
         "Dresden": 3,
@@ -185,20 +125,20 @@ CONFIG: ConfigDict = {
         "Stuttgart": 3,
     },
     
-    # === TIME PARAMETERS ===
-    "AVERAGE_SPEED_KMH": 80,                # km/h for time calculations
-    "UNLOAD_TIME_HOURS": 0.5,               # 30 minutes unloading
+    # Time parameters
+    "AVERAGE_SPEED_KMH": 80,
+    "UNLOAD_TIME_HOURS": 0.5,
     
-    # === GANTT PARAMETERS ===
-    "GANTT_DPI": 150,                       # chart quality
-    "GANTT_FIGSIZE_WIDTH": 12,              # chart width
-    "GANTT_FIGSIZE_HEIGHT": 8,              # chart height
+    # Gantt parameters
+    "GANTT_DPI": 150,
+    "GANTT_FIGSIZE_WIDTH": 12,
+    "GANTT_FIGSIZE_HEIGHT": 8,
     
-    # === DERIVED VALUES (automatically calculated) ===
-    "AVAILABLE_CITIES": [],                 # Will be populated below
-    "DESTINATION_CITIES": [],               # Will be populated below
-    "MAX_TOTAL_CAPACITY": 0,                # Will be calculated below
-    "RECOMMENDED_MAX_PER_CITY": 0,          # Will be calculated below
+    # Derived values (calculated below)
+    "AVAILABLE_CITIES": [],
+    "DESTINATION_CITIES": [],
+    "MAX_TOTAL_CAPACITY": 0,
+    "RECOMMENDED_MAX_PER_CITY": 0,
 }
 
 # Calculate derived values
@@ -217,9 +157,55 @@ CONFIG["RECOMMENDED_MAX_PER_CITY"] = min(
     CONFIG["VEHICLE_CAPACITY"] * CONFIG["MAX_VEHICLES_PER_ROUTE"]
 )
 
-# ========================================
-# FUNCTIONS
-# ========================================
+
+def call_solver_api(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Call the solver API with error handling.
+    
+    Args:
+        input_data: Dictionary containing configuration and demand data.
+        
+    Returns:
+        Dictionary containing solver results or error information.
+        Keys include 'solver_status', 'total_cost', 'tour_costs', etc.
+    """
+    url = "https://pathmatrix-solver-api.onrender.com/solve"
+    
+    try:
+        st.write("🔄 Sending request to solver...")
+                
+        response = requests.post(
+            url, 
+            json=input_data,
+            timeout=120,
+            headers={'Content-Type': 'application/json'}
+        )
+                
+        if response.status_code == 200:
+            try:
+                result = response.json()
+                st.write("✅ Successfully received response from solver")
+                return result
+            except ValueError as e:
+                st.error(f"❌ Failed to parse JSON response: {e}")
+                st.write("Raw response:", response.text[:1000])
+                return {"solver_status": "FAILED: Invalid JSON response"}
+        else:
+            st.error(f"❌ HTTP Error: {response.status_code}")
+            st.write("Response:", response.text[:1000])
+            return {"solver_status": f"FAILED: HTTP {response.status_code}"}
+            
+    except requests.exceptions.Timeout:
+        st.error("❌ Request timeout - solver took too long")
+        return {"solver_status": "FAILED: Timeout"}
+        
+    except requests.exceptions.ConnectionError:
+        st.error("❌ Connection error - could not reach solver API")
+        return {"solver_status": "FAILED: Connection error"}
+        
+    except Exception as e:
+        st.error(f"❌ Unexpected error: {str(e)}")
+        return {"solver_status": f"FAILED: {str(e)}"}
+
 
 def initialize_session_state() -> None:
     """Initialize all session state variables with default values."""
@@ -238,61 +224,56 @@ def initialize_session_state() -> None:
 
 
 def on_distribution_change() -> None:
-    """Callback for distribution mode change."""
+    """Mark map for update when distribution mode changes."""
     st.session_state["map_needs_update"] = True
 
 
 def on_packages_change() -> None:
-    """Callback for map update when demand values change."""
+    """Mark map for update when package values change."""
     st.session_state["map_needs_update"] = True
 
 
 def render_introduction() -> None:
-    """Render the introduction section with app information."""
-    inject_hub: str = CONFIG["inject_hub"]
-    vehicle_capacity: int = CONFIG["VEHICLE_CAPACITY"]
-    cost_per_km: float = CONFIG["COST_PER_KM"]
-    min_cost_per_trip: int = CONFIG["MIN_COST_PER_TRIP"]
-    solver_time_limit_ms: int = CONFIG["SOLVER_TIME_LIMIT_MS"]
+    """Render the application introduction section."""
+    hub = CONFIG["inject_hub"]
+    capacity = CONFIG["VEHICLE_CAPACITY"]
+    cost_km = CONFIG["COST_PER_KM"]
+    min_cost = CONFIG["MIN_COST_PER_TRIP"]
+    time_limit = CONFIG["SOLVER_TIME_LIMIT_MS"]
     
     with st.expander("ℹ️ Click here for introduction - Demo Version"):
         st.markdown(f"""
         Welcome to the **PathMatrix Optimizer Demo App** (MVP).
 
-        This simplified version demonstrates the **core vehicle routing optimization** with **fixed, optimized parameters** to focus on the essential functionality.
+        This simplified version demonstrates **core vehicle routing 
+        optimization** with **fixed, optimized parameters** to focus on 
+        essential functionality.
 
         ## 🎯 What this Demo does:
-        - **Optimizes routes** from {inject_hub} (central hub) to your selected destinations
+        - **Optimizes routes** from {hub} (central hub) to selected 
+          destinations
         - **Minimizes total transport costs** using mathematical optimization
         - **Prevents unnecessary detours** to cities without demand
-        - **Finds the most efficient direct routes** or cost-effective multi-stop combinations
+        - **Finds efficient direct routes** or cost-effective multi-stop 
+          combinations
 
-        ## 🔧 Fixed Parameters (optimized for typical e-commerce scenarios):
-        - **Vehicle Type**: Standard delivery van
-        - **Vehicle Capacity**: **{vehicle_capacity} packages per vehicle**
-        - **Cost Structure**: **€{cost_per_km:.2f} per kilometer + €{min_cost_per_trip} minimum cost per trip**
+        ## 🔧 Fixed Parameters:
+        - **Vehicle Capacity**: **{capacity} packages per vehicle**
+        - **Cost Structure**: **€{cost_km:.2f} per kilometer + €{min_cost} 
+          minimum cost per trip**
         - **Operation**: **Same-day delivery** with cost optimization
-        - **Route Logic**: **No complex time constraints** - focus on pure cost efficiency
-        - **Solver Time Limit**: **{solver_time_limit_ms//1000} seconds**
+        - **Solver Time Limit**: **{time_limit//1000} seconds**
 
         ## 📝 What you can configure:
-        - **Package distribution**: Choose how many packages go to which cities
-        - **Demand pattern**: Either total packages with automatic distribution or manual per-city input
+        - **Package distribution**: Choose package quantities for cities
+        - **Demand pattern**: Total packages with automatic distribution or 
+          manual per-city input
 
         ## 🚀 Expected Results:
         For feasible scenarios you should see:
-        - **Efficient tours** with minimal tour costs
+        - **Efficient tours** with minimal costs
         - **No unnecessary detours** through cities without demand
         - **Clear cost breakdown** and route visualization
-
-        ## 💡 Why Demo?
-        This version eliminates complexity to demonstrate the **core routing logic**. Future versions can add:
-        - Multiple vehicle types
-        - Complex time windows and break rules
-        - Weight/volume constraints
-        - Advanced multi-stop optimization
-
-        Use this interface to understand how **demand patterns affect routing costs** and see the **power of mathematical optimization** in logistics!
         """)
 
 
@@ -300,27 +281,26 @@ def get_package_distribution(
     manual_distribution: bool, 
     total_packages: int
 ) -> PackageDistribution:
-    """
-    Get package distribution based on manual or automatic mode.
+    """Get package distribution based on distribution mode.
     
     Args:
-        manual_distribution: Whether to use manual distribution
-        total_packages: Total number of packages for automatic distribution
+        manual_distribution: Whether to use manual distribution mode.
+        total_packages: Total packages for automatic distribution.
         
     Returns:
-        Dictionary mapping cities to package counts
+        Dictionary mapping city names to package counts.
     """
     packages_per_destination: PackageDistribution = {}
     
-    # Clean access without cast()!
-    default_distribution_percent: Dict[str, int] = CONFIG["DEFAULT_DISTRIBUTION_PERCENT"]
-    max_packages_for_city: int = CONFIG["RECOMMENDED_MAX_PER_CITY"]
-    available_cities: List[str] = CONFIG["AVAILABLE_CITIES"]
-    vehicle_capacity: int = CONFIG["VEHICLE_CAPACITY"]
+    default_percentages = CONFIG["DEFAULT_DISTRIBUTION_PERCENT"]
+    max_packages = CONFIG["RECOMMENDED_MAX_PER_CITY"]
+    available_cities = CONFIG["AVAILABLE_CITIES"]
+    vehicle_capacity = CONFIG["VEHICLE_CAPACITY"]
     
     if manual_distribution:
         st.subheader("Manual Package Distribution")
-        st.markdown("*Enter the exact number of packages for each destination:*")
+        st.markdown("*Enter the exact number of packages for each "
+                   "destination:*")
         
         col1, col2 = st.columns(2)
         
@@ -330,14 +310,15 @@ def get_package_distribution(
                 packages_per_destination[city] = st.number_input(
                     f"{city}", 
                     min_value=0,
-                    max_value=max_packages_for_city,
+                    max_value=max_packages,
                     value=st.session_state.get(f"parcels_{city}", 0),
                     key=f"parcels_{city}",
                     on_change=on_packages_change,
-                    help=f"Max {max_packages_for_city} (based on {vehicle_capacity} pkg/vehicle) to deliver to {city}"
+                    help=f"Max {max_packages} (based on {vehicle_capacity} "
+                         f"pkg/vehicle) to deliver to {city}"
                 )
     else:
-        for city, percent in default_distribution_percent.items():
+        for city, percent in default_percentages.items():
             packages_per_destination[city] = int(total_packages * percent / 100)
     
     return packages_per_destination
@@ -348,16 +329,16 @@ def render_distribution_preview(
     final_total_packages: int,
     manual_distribution: bool
 ) -> None:
-    """
-    Render the distribution preview section.
+    """Render package distribution preview.
     
     Args:
-        packages_per_destination: Package distribution by city
-        final_total_packages: Total number of packages
-        manual_distribution: Whether manual distribution is enabled
+        packages_per_destination: Package distribution by city.
+        final_total_packages: Total number of packages.
+        manual_distribution: Whether manual distribution is enabled.
     """
     if manual_distribution and final_total_packages > 0:
-        st.info(f"📊 Total packages from manual distribution: **{final_total_packages}**")
+        st.info(f"📊 Total packages from manual distribution: "
+               f"**{final_total_packages}**")
 
     if not manual_distribution and final_total_packages > 0:
         st.subheader("📋 Automatic Distribution Preview")
@@ -365,7 +346,7 @@ def render_distribution_preview(
         
         for city, packages in packages_per_destination.items():
             if packages > 0:
-                percentage: float = (packages / final_total_packages * 100)
+                percentage = (packages / final_total_packages * 100)
                 preview_data.append({
                     "City": city,
                     "Packages": packages,
@@ -373,36 +354,38 @@ def render_distribution_preview(
                 })
         
         if preview_data:
-            df_preview: pd.DataFrame = pd.DataFrame(preview_data)
+            df_preview = pd.DataFrame(preview_data)
             st.dataframe(df_preview, use_container_width=True)
 
 
-def create_demand_map(packages_per_destination: PackageDistribution) -> folium.Map:
-    """
-    Create a folium map showing demand distribution.
+def create_demand_map(
+    packages_per_destination: PackageDistribution
+) -> folium.Map:
+    """Create a folium map showing demand distribution.
     
     Args:
-        packages_per_destination: Package distribution by city
+        packages_per_destination: Package distribution by city.
         
     Returns:
-        Folium map object with demand visualization
+        Folium map object with demand visualization.
     """
-    city_coords: Dict[str, Tuple[float, float]] = CONFIG["CITY_COORDINATES"]
-    map_center_lat: float = CONFIG["MAP_CENTER_LAT"]
-    map_center_lon: float = CONFIG["MAP_CENTER_LON"]
-    map_zoom_start: int = CONFIG["MAP_ZOOM_START"]
-    inject_hub: str = CONFIG["inject_hub"]
+    city_coords = CONFIG["CITY_COORDINATES"]
+    center_lat = CONFIG["MAP_CENTER_LAT"]
+    center_lon = CONFIG["MAP_CENTER_LON"]
+    zoom_start = CONFIG["MAP_ZOOM_START"]
+    hub = CONFIG["inject_hub"]
     
-    m_demand: folium.Map = folium.Map(
-        location=[map_center_lat, map_center_lon], 
-        zoom_start=map_zoom_start
+    demand_map = folium.Map(
+        location=[center_lat, center_lon], 
+        zoom_start=zoom_start
     )
     
-    max_packages: int = max(packages_per_destination.values()) if packages_per_destination.values() else 0
+    max_packages = (max(packages_per_destination.values()) 
+                   if packages_per_destination.values() else 0)
     
     for city, coords in city_coords.items():
-        if city == inject_hub:
-            # Red circle for injection hub
+        if city == hub:
+            # Central hub marker
             folium.CircleMarker(
                 location=coords,
                 radius=8,
@@ -411,33 +394,33 @@ def create_demand_map(packages_per_destination: PackageDistribution) -> folium.M
                 fill_opacity=0.8,
                 tooltip=f"{city}: Central Distribution Hub",
                 popup=f"🏭 Central Hub {city}"
-            ).add_to(m_demand)
+            ).add_to(demand_map)
             
-            # Blue circle for injection hub demand
+            # Hub demand marker
             folium.CircleMarker(
                 location=coords,
-                radius=5 + (packages_per_destination.get(city, 0) / max(max_packages, 1)) * 10,
+                radius=5 + (packages_per_destination.get(city, 0) / 
+                           max(max_packages, 1)) * 10,
                 color="darkblue",
                 fill=True,
                 fill_opacity=0.5,
-            ).add_to(m_demand)
+            ).add_to(demand_map)
         else:
-            count: int = packages_per_destination.get(city, 0)
-            if count > 0 and city != inject_hub:
-                # Blue circles for cities with demand
-                radius: float = 5 + (count / max(max_packages, 1)) * 10
-                color: str = "darkblue"
+            count = packages_per_destination.get(city, 0)
+            if count > 0:
+                # Cities with demand
+                radius = 5 + (count / max(max_packages, 1)) * 10
                 folium.CircleMarker(
                     location=coords,
                     radius=radius,
-                    color=color,
+                    color="darkblue",
                     fill=True,
                     fill_opacity=0.7,
                     tooltip=f"{city}: {count} packages",
                     popup=f"📦 {city}<br>{count} packages"
-                ).add_to(m_demand)
+                ).add_to(demand_map)
             else:
-                # Cities without demand - small gray circles
+                # Cities without demand
                 folium.CircleMarker(
                     location=coords,
                     radius=3,
@@ -446,17 +429,17 @@ def create_demand_map(packages_per_destination: PackageDistribution) -> folium.M
                     fill_opacity=0.3,
                     tooltip=f"{city}: No packages",
                     popup=f"🚫 {city}<br>No demand"
-                ).add_to(m_demand)
+                ).add_to(demand_map)
     
-    return m_demand
+    return demand_map
 
 
 def render_technical_specs() -> None:
     """Render the technical specifications section."""
-    vehicle_capacity: int = CONFIG["VEHICLE_CAPACITY"]
-    max_vehicles_per_route: int = CONFIG["MAX_VEHICLES_PER_ROUTE"]
-    cost_per_km: float = CONFIG["COST_PER_KM"]
-    min_cost_per_trip: int = CONFIG["MIN_COST_PER_TRIP"]
+    capacity = CONFIG["VEHICLE_CAPACITY"]
+    max_vehicles = CONFIG["MAX_VEHICLES_PER_ROUTE"]
+    cost_km = CONFIG["COST_PER_KM"]
+    min_cost = CONFIG["MIN_COST_PER_TRIP"]
     
     with st.expander("🔧 Technical Specifications"):
         st.markdown(f"""
@@ -464,10 +447,10 @@ def render_technical_specs() -> None:
         
         **🚚 Vehicle Specifications:**
         - **Type**: Standard delivery van
-        - **Capacity**: {vehicle_capacity} packages per vehicle
-        - **Max vehicles per route**: {max_vehicles_per_route}
-        - **Cost**: €{cost_per_km:.2f} per kilometer
-        - **Minimum cost**: €{min_cost_per_trip} per trip (covers fixed costs)
+        - **Capacity**: {capacity} packages per vehicle
+        - **Max vehicles per route**: {max_vehicles}
+        - **Cost**: €{cost_km:.2f} per kilometer
+        - **Minimum cost**: €{min_cost} per trip (covers fixed costs)
         
         **📊 Optimization Logic:**
         - **Objective**: Minimize total transport costs
@@ -479,17 +462,16 @@ def render_results_section(
     results: Optional[Dict[str, Any]], 
     final_total_packages: int
 ) -> None:
-    """
-    Render the optimization results section.
+    """Render the optimization results section.
     
     Args:
-        results: Optimization results from solver
-        final_total_packages: Total number of packages
+        results: Optimization results from solver.
+        final_total_packages: Total number of packages.
     """
     if not results:
         return
         
-    status: str = results.get("solver_status", "")
+    status = results.get("solver_status", "")
     
     if status in ["FEASIBLE", "OPTIMAL"]:
         render_successful_results(results, final_total_packages)
@@ -500,8 +482,13 @@ def render_results_section(
     else:
         render_unknown_status(status)
 
+
 def show_simple_schedule_table(active_routes: List[Dict[str, Any]]) -> None:
-    """Show simple schedule table as Gantt fallback"""
+    """Show simple schedule table as Gantt chart fallback.
+    
+    Args:
+        active_routes: List of active route dictionaries.
+    """
     schedule_data = []
     vehicle_counter = 0
     
@@ -521,17 +508,17 @@ def show_simple_schedule_table(active_routes: List[Dict[str, Any]]) -> None:
     if schedule_data:
         df_schedule = pd.DataFrame(schedule_data)
         st.dataframe(df_schedule, use_container_width=True)
-        
+
+
 def render_successful_results(
     results: Dict[str, Any], 
     final_total_packages: int
 ) -> None:
-    """
-    Render successful optimization results.
+    """Render successful optimization results.
     
     Args:
-        results: Optimization results from solver
-        final_total_packages: Total number of packages
+        results: Optimization results from solver.
+        final_total_packages: Total number of packages.
     """
     if results.get("solver_status") == "OPTIMAL":
         st.success("✅ Optimization completed successfully!")
@@ -549,7 +536,7 @@ def render_successful_results(
     
     with col2:
         if final_total_packages > 0:
-            cost_per_package: float = results["total_cost"] / final_total_packages
+            cost_per_package = results["total_cost"] / final_total_packages
             st.metric("Cost per Package", f"€{cost_per_package:.2f}")
         else:
             st.metric("Cost per Package", "N/A")
@@ -563,8 +550,8 @@ def render_successful_results(
     # Route Analysis
     st.subheader("🗺️ Route Analysis")
     if results.get("tour_costs"):
-        df_routes: pd.DataFrame = pd.DataFrame(results["tour_costs"])
-        df_display: pd.DataFrame = df_routes.copy()
+        df_routes = pd.DataFrame(results["tour_costs"])
+        df_display = df_routes.copy()
         df_display = df_display.rename(columns={
             "from": "From",
             "to": "To", 
@@ -573,8 +560,10 @@ def render_successful_results(
             "km": "Distance (km)",
             "cost": "Cost (€)"
         })
-        df_display["Distance (km)"] = df_display["Distance (km)"].round(0).astype(int)
-        df_display["Cost (€)"] = df_display["Cost (€)"].round(0).astype(int)
+        df_display["Distance (km)"] = (df_display["Distance (km)"]
+                                      .round(0).astype(int))
+        df_display["Cost (€)"] = (df_display["Cost (€)"]
+                                 .round(0).astype(int))
         st.dataframe(df_display, use_container_width=True)
 
     # Map Visualization
@@ -582,25 +571,27 @@ def render_successful_results(
     if results.get("map_html"):
         st.components.v1.html(results["map_html"], height=500)
 
-    # Gantt Chart
+    # Vehicle Schedule
     st.subheader("⏱️ Vehicle Schedule")
     gantt_buffer: Optional[BytesIO] = None
 
     if results.get("active_routes"):
-        # Check if Backend provided Gantt chart
+        # Check if backend provided Gantt chart
         if results.get("gantt_base64"):
             try:
                 import base64
                 gantt_data = base64.b64decode(results["gantt_base64"])
                 gantt_buffer = BytesIO(gantt_data)
-                st.image(gantt_buffer, caption="Vehicle Schedule Overview", use_container_width=True)
+                st.image(gantt_buffer, 
+                        caption="Vehicle Schedule Overview", 
+                        use_container_width=True)
             except Exception as e:
                 st.warning(f"⚠️ Could not display Gantt chart: {e}")
                 st.info("📊 Showing schedule table instead")
                 show_simple_schedule_table(results["active_routes"])
         else:
-            # ✅ KORREKT: Nur Fallback-Tabelle, kein plot_gantt_diagram Aufruf!
-            st.info("📊 Backend provided no Gantt chart - showing schedule table")
+            st.info("📊 Backend provided no Gantt chart - showing "
+                   "schedule table")
             show_simple_schedule_table(results["active_routes"])
     else:
         st.info("📊 No routes to display")
@@ -608,18 +599,18 @@ def render_successful_results(
     # Download Options
     render_download_options(results, final_total_packages, gantt_buffer)
 
+
 def render_download_options(
     results: Dict[str, Any], 
     final_total_packages: int,
     gantt_buffer: Optional[BytesIO]
 ) -> None:
-    """
-    Render download options for results.
+    """Render download options for results.
     
     Args:
-        results: Optimization results
-        final_total_packages: Total number of packages
-        gantt_buffer: Gantt chart buffer
+        results: Optimization results.
+        final_total_packages: Total number of packages.
+        gantt_buffer: Gantt chart buffer (optional).
     """
     st.subheader("📥 Download Results")
     
@@ -644,7 +635,7 @@ def render_download_options(
             )
 
     # Excel Summary
-    excel_buffer: BytesIO = create_excel_summary(results, final_total_packages)
+    excel_buffer = create_excel_summary(results, final_total_packages)
     st.download_button(
         label="📑 Download Complete Results (Excel)",
         data=excel_buffer,
@@ -657,20 +648,22 @@ def create_excel_summary(
     results: Dict[str, Any], 
     final_total_packages: int
 ) -> BytesIO:
-    """
-    Create Excel summary of results.
+    """Create Excel summary of optimization results.
     
     Args:
-        results: Optimization results
-        final_total_packages: Total number of packages
+        results: Optimization results.
+        final_total_packages: Total number of packages.
         
     Returns:
-        Excel file buffer
+        Excel file buffer ready for download.
     """
-    excel_buffer: BytesIO = BytesIO()
+    excel_buffer = BytesIO()
     
-    # Prepare data
-    summary_data: Dict[str, List[str]] = {
+    # Prepare summary data
+    cost_per_package = ("N/A" if final_total_packages == 0 
+                       else f"{results['total_cost']/final_total_packages:.2f}")
+    
+    summary_data = {
         "Metric": [
             "Total Cost (€)", 
             "Cost per Package (€)", 
@@ -680,84 +673,87 @@ def create_excel_summary(
         ],
         "Value": [
             f"{results['total_cost']:.2f}",
-            f"{results['total_cost']/final_total_packages:.2f}" if final_total_packages > 0 else "N/A",
+            cost_per_package,
             f"{results.get('total_km', 0):.0f}",
             f"{results.get('solve_time', 0):.1f}",
             f"{len(results.get('tour_costs', []))}"
         ]
     }
     
-    packages_per_destination: PackageDistribution = st.session_state["packages_per_destination"]
-    demand_data: Dict[str, List[Any]] = {
+    packages_per_destination = st.session_state["packages_per_destination"]
+    demand_data = {
         "City": list(packages_per_destination.keys()),
         "Packages": list(packages_per_destination.values())
     }
     
     with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
-        pd.DataFrame(summary_data).to_excel(writer, sheet_name='Summary', index=False)
-        pd.DataFrame(demand_data).to_excel(writer, sheet_name='Demand', index=False)
+        pd.DataFrame(summary_data).to_excel(
+            writer, sheet_name='Summary', index=False)
+        pd.DataFrame(demand_data).to_excel(
+            writer, sheet_name='Demand', index=False)
         if results.get("tour_costs"):
-            pd.DataFrame(results["tour_costs"]).to_excel(writer, sheet_name='Routes', index=False)
+            pd.DataFrame(results["tour_costs"]).to_excel(
+                writer, sheet_name='Routes', index=False)
     
     excel_buffer.seek(0)
     return excel_buffer
 
 
 def render_infeasible_results(final_total_packages: int) -> None:
-    """
-    Render infeasible results section.
+    """Render infeasible optimization results.
     
     Args:
-        final_total_packages: Total number of packages
+        final_total_packages: Total number of packages.
     """
-    # Clean access without cast()!
-    vehicle_capacity: int = CONFIG["VEHICLE_CAPACITY"]
-    max_vehicles_per_route: int = CONFIG["MAX_VEHICLES_PER_ROUTE"]
-    destination_cities: List[str] = CONFIG["DESTINATION_CITIES"]
+    vehicle_capacity = CONFIG["VEHICLE_CAPACITY"]
+    max_vehicles = CONFIG["MAX_VEHICLES_PER_ROUTE"]
+    destination_cities = CONFIG["DESTINATION_CITIES"]
     
     st.error("❌ No feasible solution found!")
     st.markdown("""
     ### Possible reasons:
-        - **Demand too high**: Some destinations may require more vehicles than available
-        - **Capacity constraints**: Package distribution exceeds vehicle capacity limits  
+    - **Demand too high**: Some destinations may require more vehicles 
+      than available
+    - **Capacity constraints**: Package distribution exceeds vehicle 
+      capacity limits  
     
     ### Quick fixes:
-        - **Reduce package numbers** for distant cities
-        - **Check your demand distribution** - is it realistic?
-        """)
+    - **Reduce package numbers** for distant cities
+    - **Check your demand distribution** - is it realistic?
+    """)
     
     if final_total_packages > 0:
-        max_packages_per_vehicle: int = vehicle_capacity
-        max_vehicles_estimate: int = max_vehicles_per_route
-        min_vehicles_needed: int = (
-            (final_total_packages + max_packages_per_vehicle - 1) // max_packages_per_vehicle
-        )
+        min_vehicles_needed = ((final_total_packages + vehicle_capacity - 1) 
+                              // vehicle_capacity)
+        system_capacity = (max_vehicles * vehicle_capacity * 
+                          len(destination_cities))
         
         st.info(f"""
         ### 📊 Capacity Check:
         - **Total packages**: {final_total_packages:,}
-        - **Vehicle capacity**: {max_packages_per_vehicle} packages/vehicle
+        - **Vehicle capacity**: {vehicle_capacity} packages/vehicle
         - **Minimum vehicles needed**: {min_vehicles_needed}
-        - **Max vehicles per route**: {max_vehicles_estimate}
-        - **System capacity**: {max_vehicles_estimate * max_packages_per_vehicle * len(destination_cities):,} packages
+        - **Max vehicles per route**: {max_vehicles}
+        - **System capacity**: {system_capacity:,} packages
         """)
         
-        if min_vehicles_needed > max_vehicles_estimate:
-            st.error(f"🚨 **Problem identified**: You need {min_vehicles_needed} vehicles but only {max_vehicles_estimate} are allowed per route!")
-            st.markdown("**Solution**: Reduce package numbers or increase MAX_VEHICLES_PER_ROUTE in config.")
+        if min_vehicles_needed > max_vehicles:
+            st.error(f"🚨 **Problem identified**: You need "
+                    f"{min_vehicles_needed} vehicles but only {max_vehicles} "
+                    f"are allowed per route!")
+            st.markdown("**Solution**: Reduce package numbers or increase "
+                       "MAX_VEHICLES_PER_ROUTE in config.")
 
 
 def render_failed_results(status: str, final_total_packages: int) -> None:
-    """
-    Render failed optimization results.
+    """Render failed optimization results.
     
     Args:
-        status: Solver status
-        final_total_packages: Total number of packages
+        status: Solver status message.
+        final_total_packages: Total number of packages.
     """
-    # Clean access without cast()!
-    inject_hub: str = CONFIG["inject_hub"]
-    solver_time_limit_ms: int = CONFIG["SOLVER_TIME_LIMIT_MS"]
+    hub = CONFIG["inject_hub"]
+    time_limit = CONFIG["SOLVER_TIME_LIMIT_MS"]
     
     st.error(f"❌ Solver failed with status: {status}")
     st.markdown("""
@@ -774,10 +770,10 @@ def render_failed_results(status: str, final_total_packages: int) -> None:
     - **Simplify**: Use automatic distribution instead of manual
     """)
     
-    packages_per_destination: PackageDistribution = st.session_state["packages_per_destination"]
-    active_destinations: int = len([
+    packages_per_destination = st.session_state["packages_per_destination"]
+    active_destinations = len([
         city for city, pkg in packages_per_destination.items() 
-        if pkg > 0 and city != inject_hub
+        if pkg > 0 and city != hub
     ])
     
     with st.expander("🔧 Technical Details"):
@@ -785,28 +781,27 @@ def render_failed_results(status: str, final_total_packages: int) -> None:
         Solver Status: {status}
         Total Packages: {final_total_packages}
         Active Destinations: {active_destinations}
-        Time Limit: {solver_time_limit_ms/1000}s
+        Time Limit: {time_limit/1000}s
         """)
 
 
 def render_unknown_status(status: str) -> None:
-    """
-    Render unknown solver status.
+    """Render unknown solver status results.
     
     Args:
-        status: Unknown solver status
+        status: Unknown solver status message.
     """
     st.error(f"❌ Unknown solver status: {status}")
-    st.info("Please try running the optimization again or check your input parameters.")
+    st.info("Please try running the optimization again or check your "
+           "input parameters.")
 
 
 def main() -> None:
-    """Main application function."""
+    """Main application entry point."""
     # Initialize session state
     initialize_session_state()
 
-    # Clean access without cast()!
-    max_total_packages: int = CONFIG["MAX_TOTAL_PACKAGES"]
+    max_total_packages = CONFIG["MAX_TOTAL_PACKAGES"]
 
     # UI Header
     st.title("PathMatrix Optimizer 🚚 - Demo")
@@ -825,26 +820,28 @@ def main() -> None:
         value=st.session_state["total_packages"],
         key="total_packages",
         on_change=on_packages_change,
-        help="Total packages to be distributed from injection hub to destination cities"
+        help="Total packages to be distributed from injection hub to "
+             "destination cities"
     )
 
     # Manual distribution checkbox
-    manual_distribution: bool = st.checkbox(
+    manual_distribution = st.checkbox(
         "Enable manual per-city package input",
         key="manual_distribution",
         on_change=on_distribution_change,
-        help="Manually specify packages for each destination instead of automatic distribution"
+        help="Manually specify packages for each destination instead of "
+             "automatic distribution"
     )
 
     # Get package distribution
-    packages_per_destination: PackageDistribution = get_package_distribution(
+    packages_per_destination = get_package_distribution(
         manual_distribution, 
         st.session_state["total_packages"]
     )
 
     # Calculate final total packages
     if manual_distribution:
-        final_total_packages: int = sum(packages_per_destination.values())
+        final_total_packages = sum(packages_per_destination.values())
     else:
         final_total_packages = st.session_state["total_packages"]
 
@@ -853,13 +850,15 @@ def main() -> None:
     st.session_state["final_total_packages"] = final_total_packages
 
     # Render distribution preview
-    render_distribution_preview(packages_per_destination, final_total_packages, manual_distribution)
+    render_distribution_preview(
+        packages_per_destination, final_total_packages, manual_distribution)
 
     # Validation warning
-    show_warning: bool = final_total_packages == 0
+    show_warning = final_total_packages == 0
     if show_warning:
         if manual_distribution:
-            st.warning("🚨 Please enter package quantities for at least one destination.")
+            st.warning("🚨 Please enter package quantities for at least "
+                      "one destination.")
         else:
             st.warning("🚨 Please define the total number of packages.")
 
@@ -867,13 +866,15 @@ def main() -> None:
     st.subheader("📍 Visual Demand Overview")
 
     # Create or update demand map
-    if "demand_map" not in st.session_state or st.session_state.get("map_needs_update", True):
-        m_demand: folium.Map = create_demand_map(packages_per_destination)
-        st.session_state["demand_map"] = m_demand
+    if ("demand_map" not in st.session_state or 
+        st.session_state.get("map_needs_update", True)):
+        demand_map = create_demand_map(packages_per_destination)
+        st.session_state["demand_map"] = demand_map
         st.session_state["map_needs_update"] = False
 
     # Display map
-    st_folium(st.session_state["demand_map"], height=400, use_container_width=True)
+    st_folium(st.session_state["demand_map"], 
+             height=400, use_container_width=True)
 
     # Technical specifications
     render_technical_specs()
@@ -881,40 +882,41 @@ def main() -> None:
     # Run Optimization section
     st.markdown("---")
     st.markdown(
-        "<p style='text-align: center; color: grey;'>⚡ Optimized for speed - typically solves in under 30 seconds</p>",
+        "<p style='text-align: center; color: grey;'>⚡ Optimized for speed "
+        "- typically solves in under 30 seconds</p>",
         unsafe_allow_html=True
     )
 
-    # Centered button
+    # Centered optimization button
     left, center, right = st.columns([1, 2, 1])
-    run_button_disabled: bool = final_total_packages == 0
+    run_button_disabled = final_total_packages == 0
 
     with center:
-        run_clicked: bool = st.button(
+        run_clicked = st.button(
             "🚀 Optimize Routes", 
             help="Start route optimization with current package distribution",
             disabled=run_button_disabled,
             type="primary"
         )
 
-    # Button logic
+    # Execute optimization
     if run_clicked and not run_button_disabled:
         with st.spinner("Optimizing routes... please wait"):
-            # Convert ConfigDict to Dict[str, Any] for solver compatibility
-            config_dict: Dict[str, Any] = dict(CONFIG)
-            user_input: Dict[str, Any] = {
+            config_dict = dict(CONFIG)
+            user_input = {
                 "demand": packages_per_destination,
                 "config": config_dict
             }
             st.session_state["results"] = call_solver_api(user_input)
 
     # Show Results
-    results: Optional[Dict[str, Any]] = st.session_state.get("results")
+    results = st.session_state.get("results")
 
     if results:
         render_results_section(results, final_total_packages)
     elif not show_warning:
-        st.info("👆 Configure your package distribution above and click 'Optimize Routes' to start")
+        st.info("👆 Configure your package distribution above and click "
+               "'Optimize Routes' to start")
 
     # Footer
     st.markdown("---")
