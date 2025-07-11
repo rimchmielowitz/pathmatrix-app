@@ -37,6 +37,7 @@ FastAPI Solver Endpoint (Backend)
 ▼
 MIP Solver (Google OR-Tools)
 
+```
 
 The core problem is formulated as a **network flow optimization** problem using:
 
