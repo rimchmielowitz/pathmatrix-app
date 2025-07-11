@@ -104,9 +104,12 @@ It is not production-ready and does not include full error handling, user authen
 
 ## 🔌 API Endpoint & Backend Protection
 
-The solver API is deployed at:
+The solver API is hosted on a private deployment  
+and is **not intended for public access or direct use**.
 
-POST https://pathmatrix-solver-api.onrender.com/solve
+Access is restricted to the frontend application or authorized clients only.
+
+⚠️ The exact endpoint is intentionally not disclosed to prevent misuse.
 
 ⚠️ This endpoint is intended for use via the frontend application or custom tools only.  
 Direct browser access will return `405 Method Not Allowed`.
