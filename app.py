@@ -929,7 +929,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()#Test comment >> app.py
-
-echo #Test comment
-# Test comment
+    main()
