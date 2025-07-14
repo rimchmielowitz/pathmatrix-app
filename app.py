@@ -81,7 +81,7 @@ CONFIG: ConfigDict = {
     
     # UI parameters
     "MAX_TOTAL_PACKAGES": 7500,
-    "MAX_PACKAGES_PER_CITY": 1000,
+    "MAX_PACKAGES_PER_CITY": 3000,
     "DEFAULT_TOTAL_PACKAGES": 0,
     
     # Solver parameters
