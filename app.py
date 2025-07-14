@@ -80,7 +80,7 @@ CONFIG: ConfigDict = {
     "MIN_COST_PER_TRIP": 100,
     
     # UI parameters
-    "MAX_TOTAL_PACKAGES": 7500,
+    "MAX_TOTAL_PACKAGES": 100000,
     "MAX_PACKAGES_PER_CITY": 3000,
     "DEFAULT_TOTAL_PACKAGES": 0,
     
