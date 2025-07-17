@@ -4,6 +4,7 @@
 [![Docs](https://img.shields.io/badge/docs-auto--generated-blue)](docs/FUNCTION_REFERENCE.md)
 [![Version](https://img.shields.io/github/v/tag/rimchmielowitz/pathmatrix-app)](https://github.com/rimchmielowitz/pathmatrix-app/releases)
 **PathMatrix Optimizer** is a web-based demo showcasing the power of mathematical optimization for vehicle routing problems. This minimal viable product (MVP) lets users simulate logistics scenarios by distributing packages across cities and solving for cost-optimal routes in real time.
+Click [here]([url](https://pathmatrix.streamlit.app/)) for a demo.
 
 ---
 
