@@ -545,7 +545,7 @@ def render_successful_results(
         st.metric("Total Distance", f"{results.get('total_km', 0):.0f} km")
     
     with col4:
-        st.metric("Solve Time", f"{results.get('solve_time', 0):.1f}s")
+        st.metric("Solve Time", f"{results.get('solve_time', 0):.2f}s")
 
     # Route Analysis
     st.subheader("🗺️ Route Analysis")
