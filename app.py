@@ -569,7 +569,15 @@ def render_successful_results(
     # Map Visualization
     st.subheader("🗺️ Route Map")
     if results.get("map_html"):
-        st.components.v1.html(results["map_html"], height=500)
+        st.components.v1.html(
+            f"""
+            <div style="width: 100%; height: 100%;">
+                {results["map_html"]}
+            </div>
+            """,
+            height=500,
+            scrolling=False,
+        )    
 
     # Vehicle Schedule
     st.subheader("⏱️ Vehicle Schedule")
