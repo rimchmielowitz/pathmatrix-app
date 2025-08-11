@@ -570,14 +570,32 @@ def render_successful_results(
     st.subheader("🗺️ Route Map")
     if results.get("map_html"):
         st.components.v1.html(
-            f"""
+        f"""
+         <div style="width: 100%; height: 500px; margin: 0; padding: 0; overflow: hidden;">
+            <style>
+                .folium-map {{
+                    width: 100% !important;
+                    height: 100% !important;
+                }}
+                .leaflet-container {{
+                    width: 100% !important;
+                    height: 100% !important;
+                }}
+                body {{
+                    margin: 0;
+                    padding: 0;
+                    width: 100%;
+                    height: 100%;
+                }}
+            </style>
             <div style="width: 100%; height: 100%;">
                 {results["map_html"]}
             </div>
-            """,
-            height=500,
-            scrolling=False,
-        )    
+        </div>
+        """,
+        height=500,
+        scrolling=False,
+    )    
 
     # Vehicle Schedule
     st.subheader("⏱️ Vehicle Schedule")
