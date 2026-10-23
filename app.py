@@ -168,7 +168,10 @@ def call_solver_api(input_data: Dict[str, Any]) -> Dict[str, Any]:
         Dictionary containing solver results or error information.
         Keys include 'solver_status', 'total_cost', 'tour_costs', etc.
     """
-    url = "https://pathmatrix-solver-api.onrender.com/solve"
+    url = st.secrets.get(
+        "SOLVER_API_URL",
+        "https://pathmatrix-solver-api-staging.onrender.com/solve"
+    )
     
     try:
         st.write("🔄 Sending request to solver...")
